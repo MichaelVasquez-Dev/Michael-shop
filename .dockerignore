@@ -1,0 +1,10 @@
+.env
+.env.temp
+postgres
+node_modules
+.dist
+.git
+.gitignore
+Dockerfile
+docker-compose.yml
+readme.md
