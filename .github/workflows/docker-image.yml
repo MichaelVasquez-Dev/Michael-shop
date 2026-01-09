@@ -38,12 +38,12 @@ jobs:
       env:
         APP_VERSION: ${{ steps.versionASD.outputs.version }}
       run: |
-        docker build -t michaelvasquezdev/michael-shop:$APP_VERSION .
-        docker build -t michaelvasquezdev/michael-shop:latest .
+        docker build --target prod -t michaelvasquezdev/michael-shop:$APP_VERSION .
+        docker build --target prod -t michaelvasquezdev/michael-shop:latest .
 
     - name: Push Docker Image
       env:
         APP_VERSION: ${{ steps.versionASD.outputs.version }}
       run: |
-        docker push michaelvasquezdev/michael-shop:$APP_VERSION
-        docker push michaelvasquezdev/michael-shop:latest
+        docker push --target prod michaelvasquezdev/michael-shop:$APP_VERSION
+        docker push --target prod michaelvasquezdev/michael-shop:latest
