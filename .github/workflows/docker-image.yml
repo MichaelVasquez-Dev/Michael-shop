@@ -45,5 +45,5 @@ jobs:
       env:
         APP_VERSION: ${{ steps.versionASD.outputs.version }}
       run: |
-        docker push --target prod michaelvasquezdev/michael-shop:$APP_VERSION
-        docker push --target prod michaelvasquezdev/michael-shop:latest
+        docker push michaelvasquezdev/michael-shop:$APP_VERSION
+        docker push michaelvasquezdev/michael-shop:latest
