@@ -6,6 +6,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { validate as isUUID } from 'uuid';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class ProductsService {
@@ -23,14 +24,15 @@ export class ProductsService {
     private readonly dataSource: DataSource,
   ){}
 
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto, user: User) {
     try {
 
       const { images = [], ...productData } = createProductDto;
 
       const product = this.productRepository.create({
         ...productData,
-        images: images.map(image => this.productImageRepository.create({ url: image }))
+        images: images.map(image => this.productImageRepository.create({ url: image })),
+        user
       });
       await this.productRepository.save(product);
 
@@ -84,7 +86,7 @@ export class ProductsService {
     }
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(id: string, updateProductDto: UpdateProductDto, user: User) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -99,10 +101,8 @@ export class ProductsService {
       if ( images.length  ) {
         await queryRunner.manager.delete(ProductImage, { product: { id } });
         product.images = images.map(image => this.productImageRepository.create({ url: image }));
-      } else {
-
-      }
-
+      } 
+      product.user = user;
       await queryRunner.manager.save(product);
       await queryRunner.commitTransaction();
       await queryRunner.release();
@@ -129,16 +129,17 @@ export class ProductsService {
 
   private handleDBExceptions(error: any) {
     if (error.code === '23505') throw new BadRequestException('Product already exists');
-    
+    if (error.response?.statusCode === 404) throw new NotFoundException(error.response.message);
     this.logger.error(error);
     throw new InternalServerErrorException('Internal server error - Check server logs'); 
   }
 
   async deleteAllProduct() {
-    const query = this.productRepository.createQueryBuilder('product');
-
     try {
-      return await query.delete().where({}).execute();
+      // Primero eliminamos las imágenes de productos
+      await this.productImageRepository.createQueryBuilder().delete().execute();
+      // Luego eliminamos los productos
+      await this.productRepository.createQueryBuilder().delete().execute();
     } catch (error) {
       this.handleDBExceptions(error);
     }
